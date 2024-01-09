@@ -5,3 +5,4 @@ template_private/
 result*
 thresh_template_private.csv
 make_csv.*
+.idea/

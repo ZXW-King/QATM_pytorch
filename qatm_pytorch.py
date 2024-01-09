@@ -31,7 +31,7 @@ from utils import *
 # # CONVERT IMAGE TO TENSOR
 
 class ImageDataset(torch.utils.data.Dataset):
-    def __init__(self, template_dir_path, image_name, thresh_csv=None, transform=None):
+    def __init__(self, template_dir_path, image_name, thresh=0.7,thresh_csv=None, transform=None):
         self.transform = transform
         if not self.transform:
             self.transform = transforms.Compose([
@@ -43,7 +43,7 @@ class ImageDataset(torch.utils.data.Dataset):
             ])
         self.template_path = list(template_dir_path.iterdir())
         self.image_name = image_name
-        
+        self.thresh = thresh
         self.image_raw = cv2.imread(self.image_name)
         
         self.thresh_df = None
@@ -61,10 +61,9 @@ class ImageDataset(torch.utils.data.Dataset):
         template = cv2.imread(template_path)
         if self.transform:
             template = self.transform(template)
-        thresh = 0.7
-        if self.thresh_df is not None:
-            if self.thresh_df.path.isin([template_path]).sum() > 0:
-                thresh = float(self.thresh_df[self.thresh_df.path==template_path].thresh)
+        # if self.thresh_df is not None:
+        #     if self.thresh_df.path.isin([template_path]).sum() > 0:
+        #         thresh = float(self.thresh_df[self.thresh_df.path==template_path].thresh)
         return {'image': self.image, 
                     'image_raw': self.image_raw, 
                     'image_name': self.image_name,
@@ -72,12 +71,7 @@ class ImageDataset(torch.utils.data.Dataset):
                     'template_name': template_path, 
                     'template_h': template.size()[-2],
                    'template_w': template.size()[-1],
-                   'thresh': thresh}
-
-
-template_dir = 'template/'
-image_path = 'sample/sample1.jpg'
-dataset = ImageDataset(Path(template_dir), image_path, thresh_csv='thresh_template.csv')
+                   'thresh': self.thresh}
 
 
 # ### EXTRACT FEATURE
@@ -340,13 +334,17 @@ def run_multi_sample(model, dataset):
     return np.squeeze(np.array(scores), axis=1), np.array(w_array), np.array(h_array), thresh_list
 
 
-model = CreateModel(model=models.vgg19(pretrained=True).features, alpha=25, use_cuda=True)
+if __name__ == '__main__':
+    template_dir = 'template/'
+    image_path = 'sample/sample1.jpg'
+    dataset = ImageDataset(Path(template_dir), image_path, thresh_csv='thresh_template.csv')
+    model = CreateModel(model=models.vgg19(pretrained=True).features, alpha=25, use_cuda=True)
 
-scores, w_array, h_array, thresh_list = run_multi_sample(model, dataset)
+    scores, w_array, h_array, thresh_list = run_multi_sample(model, dataset)
 
-boxes, indices = nms_multi(scores, w_array, h_array, thresh_list)
+    boxes, indices = nms_multi(scores, w_array, h_array, thresh_list)
 
-d_img = plot_result_multi(dataset.image_raw, boxes, indices, show=True, save_name='result_sample.png')
+    d_img = plot_result_multi(dataset.image_raw, boxes, indices, show=True, save_name='result_sample.png')
 
-plt.imshow(scores[2])
+    plt.imshow(scores[2])
 
