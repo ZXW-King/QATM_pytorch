@@ -6,3 +6,5 @@ result*
 thresh_template_private.csv
 make_csv.*
 .idea/
+result/
+res/
