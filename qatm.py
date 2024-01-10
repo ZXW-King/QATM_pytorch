@@ -18,6 +18,8 @@ import ast
 import types
 import sys
 
+from ghost_model import ghostnet
+
 # with open("qatm_pytorch.py") as f:
 #        p = ast.parse(f.read())
 #
@@ -50,8 +52,18 @@ if __name__ == '__main__':
         os.mkdir(result_path)    
 
     print("define model...")
+
+    net = ghostnet()
+    net.load_state_dict(torch.load('/mnt/sda1/模板匹配/similarity_template-dev/ghost_net/state_dict_73.98.pth'))
+    print("模型加载完毕！！")
+    print(net.features())
+    model = CreateModel(model=net.features(), alpha=args.alpha, use_cuda=args.cuda)     #使用ghostnet
+
+    # net = models.vgg19(pretrained=True).features
+    # print(net[16])
+
     #model = CreateModel(model=models.resnet18(pretrained=True).features, alpha=args.alpha, use_cuda=args.cuda)
-    model = CreateModel(model=models.vgg19(pretrained=True).features, alpha=args.alpha, use_cuda=args.cuda)     #使用VGG19
+    #model = CreateModel(model=models.vgg19(pretrained=True).features, alpha=args.alpha, use_cuda=args.cuda)     #使用VGG19
     #model = CreateModel(model=models.mobilenet_v2(pretrained=True).features, alpha=args.alpha, use_cuda=args.cuda)     #使用mobilenet_v2
     
     if not args.sample_images_dir:

@@ -82,13 +82,15 @@ class Featex():
         self.feature1 = None
         self.feature2 = None
         self.model= copy.deepcopy(model.eval())
-        self.model = self.model[:17]
+        #self.model = self.model[:17]
+        self.model = self.model[:]
         for param in self.model.parameters():
             param.requires_grad = False
         if self.use_cuda:
             self.model = self.model.cuda()
-        self.model[2].register_forward_hook(self.save_feature1)
+        self.model[3].register_forward_hook(self.save_feature1)
         self.model[16].register_forward_hook(self.save_feature2)
+        #self.model[16].register_forward_hook(self.save_feature2)
         
     def save_feature1(self, module, input, output):
         self.feature1 = output.detach()
