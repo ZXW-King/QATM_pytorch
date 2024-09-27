@@ -18,6 +18,8 @@ import ast
 import types
 import sys
 
+from ghost_model import ghostnet
+
 # with open("qatm_pytorch.py") as f:
 #        p = ast.parse(f.read())
 #
@@ -50,7 +52,19 @@ if __name__ == '__main__':
         os.mkdir(result_path)    
 
     print("define model...")
-    model = CreateModel(model=models.vgg19(pretrained=True).features, alpha=args.alpha, use_cuda=args.cuda)
+
+    net = ghostnet()
+    net.load_state_dict(torch.load('/mnt/sda1/模板匹配/similarity_template-dev/ghost_net/state_dict_73.98.pth'))
+    print("模型加载完毕！！")
+    print(net.features())
+    model = CreateModel(model=net.features(), alpha=args.alpha, use_cuda=args.cuda)     #使用ghostnet
+
+    # net = models.vgg19(pretrained=True).features
+    # print(net[16])
+
+    #model = CreateModel(model=models.resnet18(pretrained=True).features, alpha=args.alpha, use_cuda=args.cuda)
+    #model = CreateModel(model=models.vgg19(pretrained=True).features, alpha=args.alpha, use_cuda=args.cuda)     #使用VGG19
+    #model = CreateModel(model=models.mobilenet_v2(pretrained=True).features, alpha=args.alpha, use_cuda=args.cuda)     #使用mobilenet_v2
     
     if not args.sample_images_dir:
         print('One Sample Image Is Inputted')
@@ -59,8 +73,9 @@ if __name__ == '__main__':
         print("calculate score...")
         scores, w_array, h_array, thresh_list = run_multi_sample(model, dataset)
         print("nms...")
-        boxes, indices = nms_multi(scores, w_array, h_array, thresh_list)
-        _ = plot_result_multi(dataset.image_raw, boxes, indices, show=False, save_name='result.png')
+        boxes, indices ,sco  = nms_multi(scores, w_array, h_array, thresh_list)
+        print(boxes,sco)
+        _ = plot_result_multi(dataset.image_raw, boxes, indices, show=False, save_name='result.png',sco=sco)
         print("result_yaoshi.png was saved")
 
     else:
@@ -76,11 +91,13 @@ if __name__ == '__main__':
             print("calculate score...")
             scores, w_array, h_array, thresh_list = run_multi_sample(model, dataset)
             print("nms...")
-            boxes, indices = nms_multi(scores, w_array, h_array, thresh_list)
-            d_img = plot_result_multi(dataset.image_raw, boxes, indices, show=True, save_name=os.path.join(result_path,image_name)+'.png')
+            boxes, indices ,sco = nms_multi(scores, w_array, h_array, thresh_list)
+            print(boxes,sco)
+            d_img = plot_result_multi(dataset.image_raw, boxes, indices, show=True, save_name=os.path.join(result_path,image_name)+'.png' ,sco=sco)
             print("result image was saved")
             del(dataset)
             del(d_img)
             gc.collect()
             torch.cuda.empty_cache()
             i+=1
+
